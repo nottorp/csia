@@ -35,6 +35,7 @@ confint_manual <- function(d, found_slope, found_intercept)
   fitted_obs = sapply(xes, function(x) x * found_slope + found_intercept)
   sse = sum(mapply(function(x, y) (x - y)**2, justobs, fitted_obs))
   sigma_est_curs = sqrt(sse / (length(justobs) - 2))
+  se_slope = sigma_est_curs^2
   ss_xes = sum(xes^2)
   t25n2 = qt(.975, df=(length(justobs) - 2))
   cat("sigma estimated:", sigma_est_curs, "\n")
@@ -44,8 +45,10 @@ confint_manual <- function(d, found_slope, found_intercept)
   ci_slope_max = found_slope + t25n2 * sigma_est_curs / sqrt(ss_xes)
   cat("ci_slope_min:", ci_slope_min, "\n")
   cat("ci_slope_max:", ci_slope_max, "\n")
-  ci_int_min = found_intercept - t25n2 * sigma_est_curs / sqrt(ss_xes)
-  ci_int_max = found_intercept + t25n2 * sigma_est_curs / sqrt(ss_xes)
+  
+  se_intercept = sigma_est_curs * sqrt(ss_xes / length(justobs))
+  ci_int_min = found_intercept - t25n2 * se_intercept
+  ci_int_max = found_intercept + t25n2 * se_intercept
   cat("ci_int_min:", ci_int_min, "\n")
   cat("ci_int_max:", ci_int_max, "\n")  
   return (c(ci_slope_min, ci_slope_max))
