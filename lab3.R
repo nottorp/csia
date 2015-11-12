@@ -16,13 +16,39 @@ gensrobs <- function(m, a, b, xmin, xmax, sigma)
 
 # PR 2
 
-confint_manual <- function(d, m)
+# b = fit b +/- T 2.5% (m-2) . standard error (fit b), same for a
+# P(b fit - * <= b <= b fit + *) = 95%
+# Calculat confidence interval manual - std error etc
+# SE(fit b) = sigma (original) / sqrt(m) * Sx  - std deviation for x = (sum(xi) - e(x))^2 / m
+# S = estimator pt sigma = (sum (yi - e(y)))^2 / (m - 2), in loc de sigma (original)
+# m - 2 == gradul de libertate, nr de observatii - nr de variabile - 1
+# SE(fit b) = S / (sqrt(sum (xi = e(x))^2))
+# var(b fit) = S^2 / (m * Sx^2)
+
+confint_manual <- function(d, found_slope, found_intercept)
 {
   print("BEGIN confint_manual")
+  xes = d[,1]
   justobs = d[,2]
-  print (justobs)
-  obs_mean = mean(justobs)
-  print (obs_mean)
+  print (found_slope)
+  print (found_intercept)
+  fitted_obs = sapply(xes, function(x) x * found_slope + found_intercept)
+  sse = sum(mapply(function(x, y) (x - y)**2, justobs, fitted_obs))
+  sigma_est_curs = sqrt(sse / (length(justobs) - 2))
+  ss_xes = sum(xes^2)
+  t25n2 = qt(.975, df=(length(justobs) - 2))
+  cat("sigma estimated:", sigma_est_curs, "\n")
+  cat("t 2.5%", length(justobs) - 2, " degrees of freedom: ", t25n2, "\n")
+  cat("sum of squares for x:", ss_xes, "\n")
+  ci_slope_min = found_slope - t25n2 * sigma_est_curs / sqrt(ss_xes)
+  ci_slope_max = found_slope + t25n2 * sigma_est_curs / sqrt(ss_xes)
+  cat("ci_slope_min:", ci_slope_min, "\n")
+  cat("ci_slope_max:", ci_slope_max, "\n")
+  ci_int_min = found_intercept - t25n2 * sigma_est_curs / sqrt(ss_xes)
+  ci_int_max = found_intercept + t25n2 * sigma_est_curs / sqrt(ss_xes)
+  cat("ci_int_min:", ci_int_min, "\n")
+  cat("ci_int_max:", ci_int_max, "\n")  
+  return (c(ci_slope_min, ci_slope_max))
   print("END confint_manual")
 }
 
@@ -33,16 +59,16 @@ simpleregression <- function(counter, m, a, b, xmin, xmax, sigma)
   fname = sprintf("simple_regression_%d.pdf", counter)
   pdf(fname, 8.27, 5.83) # A5
   fit = lm(obs ~ xes, as.data.frame(d))
-  ci_b = confint(fit, 'xes', 0.95)
-  ci_a = confint(fit, '(Intercept)', 0.95)
-  confint_manual(d, m)
+  ci_b = confint(fit, 'xes', 0.975)
+  ci_a = confint(fit, '(Intercept)', 0.975)
+  ci_manual = confint_manual(d, unname(fit$coefficients[2]), unname(fit$coefficients[1]))
   print(ci_b[1])
   print(ci_b[2])
   
-  title2 = sprintf("m=%d, a=%.2f, b=%.2f, xmin=%.2f, xmax=%.2f, sigma=%.2f\n%.2f <= fit a=%.2f <= %.2f\n%.2f <= fit b=%.2f <= %.2f",
+  title2 = sprintf("m=%d, a=%.2f, b=%.2f, xmin=%.2f, xmax=%.2f, sigma=%.2f\n%.4f <= fit a=%.4f <= %.4f\n%.4f (%.4f) <= fit b=%.4f <= (%.4f) %.4f",
                    m, a, b, xmin, xmax, sigma,
                    ci_a[1], fit$coefficients[1], ci_a[2],
-                   ci_b[1], fit$coefficients[2], ci_b[2])
+                   ci_b[1], ci_manual[1], fit$coefficients[2], ci_manual[2], ci_b[2])
   plot(main=title2, d)
   abline(coef(fit), col="red")
   abline(a, b, col="blue")
@@ -74,10 +100,12 @@ simpleregression <- function(counter, m, a, b, xmin, xmax, sigma)
 }
 
 # Counter for file name, no of samples, a, b, minx, maxx, sigma
-#simpleregression(1, 100, 3, 5, -200, 200, 1.5)
-simpleregression(2, 10, 3, 5, -5, 5, 1)
+simpleregression(1, 100, 3, 5, -200, 200, 1.5)
+#simpleregression(2, 10, 3, 5, -5, 5, 1)
 #simpleregression(3, 10000, 3, 5, -5, 5, 1)
 #simpleregression(4, 10, 3, 5, 5, 5.2, 1)
 #simpleregression(5, 10000, 3, 5, 5, 5.2, 1)
 #simpleregression(6, 10, 3, 5, 5, 5.2, 0.01)
 
+#d = gensrobs(10000, 3, 5, -5, 5, 1)
+#fit = lm(obs ~ xes, as.data.frame(d))
