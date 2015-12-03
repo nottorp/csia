@@ -33,22 +33,28 @@ confint_manual <- function(d, found_slope, found_intercept)
   print (found_slope)
   print (found_intercept)
   fitted_obs = sapply(xes, function(x) x * found_slope + found_intercept)
-  sse = sum(mapply(function(x, y) (x - y)**2, justobs, fitted_obs))
-  sigma_est_curs = sqrt(sse / (length(justobs) - 2))
+  sse_dumb = sum(mapply(function(x, y) (x - y)**2, justobs, fitted_obs))
+  sse_r_style = sum((justobs - fitted_obs)^2)
+  sse = sse_r_style
+  freedom = length(justobs) - 2
+  sigma_est_curs = sqrt(sse / freedom)
   se_slope = sigma_est_curs^2
   ss_xes = sum(xes^2)
-  t25n2 = qt(.975, df=(length(justobs) - 2))
+  #t25n2 = qt(.975, df=(length(justobs) - 2))
+  t25n2 = qt(c(.025, .975), df=freedom)
   cat("sigma estimated:", sigma_est_curs, "\n")
-  cat("t 2.5%", length(justobs) - 2, " degrees of freedom: ", t25n2, "\n")
+  cat("t 2.5%", t25n2[1], " degrees of freedom: ", freedom, "\n")
+  #print(xes)
   cat("sum of squares for x:", ss_xes, "\n")
-  ci_slope_min = found_slope - t25n2 * sigma_est_curs / sqrt(ss_xes)
-  ci_slope_max = found_slope + t25n2 * sigma_est_curs / sqrt(ss_xes)
+  cat("sigma/sqrt(sum of squares x)", sigma_est_curs / sqrt(ss_xes), "\n")
+  ci_slope_min = found_slope + t25n2[1] * sigma_est_curs / sqrt(ss_xes)
+  ci_slope_max = found_slope + t25n2[2] * sigma_est_curs / sqrt(ss_xes)
   cat("ci_slope_min:", ci_slope_min, "\n")
   cat("ci_slope_max:", ci_slope_max, "\n")
   
   se_intercept = sigma_est_curs * sqrt(ss_xes / length(justobs))
-  ci_int_min = found_intercept - t25n2 * se_intercept
-  ci_int_max = found_intercept + t25n2 * se_intercept
+  ci_int_min = found_intercept + t25n2[1] * se_intercept
+  ci_int_max = found_intercept + t25n2[2] * se_intercept
   cat("ci_int_min:", ci_int_min, "\n")
   cat("ci_int_max:", ci_int_max, "\n")  
   return (c(ci_slope_min, ci_slope_max))
@@ -104,11 +110,11 @@ simpleregression <- function(counter, m, a, b, xmin, xmax, sigma)
 
 # Counter for file name, no of samples, a, b, minx, maxx, sigma
 simpleregression(1, 100, 3, 5, -200, 200, 1.5)
-#simpleregression(2, 10, 3, 5, -5, 5, 1)
-#simpleregression(3, 10000, 3, 5, -5, 5, 1)
-#simpleregression(4, 10, 3, 5, 5, 5.2, 1)
-#simpleregression(5, 10000, 3, 5, 5, 5.2, 1)
-#simpleregression(6, 10, 3, 5, 5, 5.2, 0.01)
+simpleregression(2, 10, 3, 5, -5, 5, 1)
+simpleregression(3, 10000, 3, 5, -5, 5, 1)
+simpleregression(4, 10, 3, 5, 5, 5.2, 1)
+simpleregression(5, 10000, 3, 5, 5, 5.2, 1)
+simpleregression(6, 10, 3, 5, 5, 5.2, 0.01)
 
 #d = gensrobs(10000, 3, 5, -5, 5, 1)
 #fit = lm(obs ~ xes, as.data.frame(d))
