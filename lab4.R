@@ -21,6 +21,11 @@ oneRegression <- function(y, data, colidx, n, m)
   return (c(rss, detcoef, adjdetcoef, cp))
 }
 
+brss <- c()
+br2 <- c()
+br2a <- c()
+bcp <- c()
+
 for (p in 1:n)
 {
   colidxlist = combn(n, p)
@@ -66,6 +71,11 @@ for (p in 1:n)
   cat("Best R2 adjusted is ", bestadjcoef,  " for columns ", colnames(data)[bestadjcoefidx], "\n")
   cat("Best CP is ", bestcp, " for columns ", colnames(data)[bestcpidx], "\n")
   print("*******************************************************************************")
+  
+  brss <- append(brss, bestrss)
+  br2 <- append(br2, bestdetcoef)
+  br2a <- append(br2a, bestadjcoef)
+  bcp <- append(bcp, bestcp)
 }
 
 normalize <- function(x)
@@ -73,4 +83,16 @@ normalize <- function(x)
   return((x - min(x)) / (max(x) - min(x)))
 }
 
+brssnorm <- normalize(brss)
+bcpnorm <- normalize(bcp)
 
+print (brss)
+print (brssnorm)
+
+//plot((1:13), brssnorm, type="b", xlab="")
+//par(new=TRUE)
+//plot((1:13), br2, type="b")
+
+
+matplot((1:13), cbind(brssnorm, br2, br2a, bcpnorm), type="b", col=1:4)
+legend("right", c("RSS (normalized)", "R2", "R2adj", "CP"), pch=1, col=1:4)
