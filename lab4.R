@@ -1,9 +1,12 @@
 victim = read.table("house.dat", header=TRUE)
-print (victim)
+#print (victim)
 data = as.matrix(victim[,-1])
 y = victim$PRICE
 n = ncol(data)
 m = nrow(data)
+
+rssfull = sum(resid(lm(y ~ data))^2)
+s2full = rssfull / (m - n - 1)
 
 oneRegression <- function(y, data, colidx, n, m)
 {
@@ -14,11 +17,11 @@ oneRegression <- function(y, data, colidx, n, m)
   tss = sum((y - mean(y))^2)
   detcoef = 1 - rss/tss
   adjdetcoef = 1 - (rss / (m - n - 1)) / (tss / (m - 1))
-  cp = (rss / (rss / (m - n - 1))) - (m - 2 * (p + 1))
+  cp = ((rss / s2full) - (m - 2 * (p + 1)))
   return (c(rss, detcoef, adjdetcoef, cp))
 }
 
-for (p in 1:1)
+for (p in 1:n)
 {
   colidxlist = combn(n, p)
   bestrss = NA
@@ -30,9 +33,9 @@ for (p in 1:1)
     colidx = c(colidxlist[, i])
     #print (colidx)
     res = oneRegression(y, data, colidx, n, m)
-    print(res)
-    print(bestrss)
-    print(res[1])
+    #print(res)
+    #print(bestrss)
+    #print(res[1])
     if (is.na(bestrss) || (bestrss > res[1]))
     {
       bestrss = res[1]
@@ -49,7 +52,7 @@ for (p in 1:1)
       bestadjcoefidx = colidx
     }
     
-    if (is.na(bestcp) || (abs(bestcp - (p+1)) > abs(r[4] - (p + 1))))
+    if (is.na(bestcp) || (abs(bestcp - (p+1)) > abs(res[4] - (p + 1))))
     {
       bestcp = res[4]
       bestcpidx = colidx
@@ -58,9 +61,16 @@ for (p in 1:1)
   }
   print("===============================================================================")
   cat("For ", p, " features:\n")
-  cat("Best RSS is ", bestrss, " for columns ", bestrssidx, "\n")
-  cat("Best R2 is ", bestdetcoef, " for columns ", bestdetcoefidx, "\n")
-  cat("Best R2 adjusted is ", bestadjcoef,  " for columns ", bestadjcoefidx, "\n")
-  cat("Best CP is ", bestcp, " for columns ", bestcpidx, "\n")
+  cat("Best RSS is ", bestrss, " for columns ", colnames(data)[bestrssidx], "\n")
+  cat("Best R2 is ", bestdetcoef, " for columns ", colnames(data)[bestdetcoefidx], "\n")
+  cat("Best R2 adjusted is ", bestadjcoef,  " for columns ", colnames(data)[bestadjcoefidx], "\n")
+  cat("Best CP is ", bestcp, " for columns ", colnames(data)[bestcpidx], "\n")
   print("*******************************************************************************")
 }
+
+normalize <- function(x)
+{
+  return((x - min(x)) / (max(x) - min(x)))
+}
+
+
