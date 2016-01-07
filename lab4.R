@@ -8,7 +8,7 @@ m = nrow(data)
 rssfull = sum(resid(lm(y ~ data))^2)
 s2full = rssfull / (m - n - 1)
 
-oneRegression <- function(y, data, colidx, n, m)
+oneRegression <- function(y, data, colidx, n, m, p)
 {
   features = data[, colidx]
   reg = lm(y ~ features)
@@ -26,6 +26,11 @@ br2 <- c()
 br2a <- c()
 bcp <- c()
 
+bbrss = NA
+bbr2 = NA
+bbr2a = NA
+bbcp = NA
+
 for (p in 1:n)
 {
   colidxlist = combn(n, p)
@@ -37,7 +42,7 @@ for (p in 1:n)
   {
     colidx = c(colidxlist[, i])
     #print (colidx)
-    res = oneRegression(y, data, colidx, n, m)
+    res = oneRegression(y, data, colidx, n, m, p)
     #print(res)
     #print(bestrss)
     #print(res[1])
@@ -76,6 +81,29 @@ for (p in 1:n)
   br2 <- append(br2, bestdetcoef)
   br2a <- append(br2a, bestadjcoef)
   bcp <- append(bcp, bestcp)
+  
+  if (is.na(bbrss) || (bbrss > brss))
+  {
+    bbrss = brss
+    bbrss_cols = bestrssidx
+  }
+  if (is.na(bbr2) || (bbr2 < bestdetcoef))
+  {
+    bbr2 = bestdetcoef
+    bbr2_cols = bestdetcoefidx
+  }
+  #if (is.na(bbr2a) || (bbr2a < bestadjcoef))
+  #{
+  #  bbr2a = bestadjcoef
+  #  bbr2a_cols = co
+  #}
+  
+  #if (is.na(bestcp) || (abs(bestcp - (p+1)) > abs(res[4] - (p + 1))))
+  #{
+  #  bestcp = res[4]
+  #  bestcpidx = colidx
+  #}
+  
 }
 
 normalize <- function(x)
@@ -89,10 +117,10 @@ bcpnorm <- normalize(bcp)
 print (brss)
 print (brssnorm)
 
-//plot((1:13), brssnorm, type="b", xlab="")
-//par(new=TRUE)
-//plot((1:13), br2, type="b")
+#plot((1:13), brssnorm, type="b", xlab="")
+#par(new=TRUE)
+#plot((1:13), br2, type="b")
 
-
-matplot((1:13), cbind(brssnorm, br2, br2a, bcpnorm), type="b", col=1:4)
+matplot((1:13), cbind(brss, br2, br2a, bcp), type="b", col=1:4)
+# matplot((1:13), cbind(brssnorm, br2, br2a, bcpnorm), type="b", col=1:4)
 legend("right", c("RSS (normalized)", "R2", "R2adj", "CP"), pch=1, col=1:4)
